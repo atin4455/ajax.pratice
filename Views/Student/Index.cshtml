@@ -1,0 +1,138 @@
+﻿@{
+    ViewBag.Title = "學生資料";
+}
+
+<h2>學生資料管理</h2>
+
+<!-- 新增學生 -->
+<h3>新增學生</h3>
+<form id="create-form">
+    <div class="form-group">
+        <label for="Name">姓名</label>
+        <input type="text" class="form-control" id="Name" name="Name" required />
+    </div>
+    <div class="form-group">
+        <label for="Email">電子郵件</label>
+        <input type="email" class="form-control" id="Email" name="Email" required />
+    </div>
+    <div class="form-group">
+        <label for="Course">課程</label>
+        <input type="text" class="form-control" id="Course" name="Course" required />
+    </div>
+    <button type="submit" class="btn btn-primary">新增學生</button>
+</form>
+
+<hr />
+
+<!-- 學生資料表格 -->
+<h3>學生資料</h3>
+<table class="table table-striped" id="student-table">
+    <thead>
+        <tr>
+            <th>編號</th>
+            <th>姓名</th>
+            <th>電子郵件</th>
+            <th>課程</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- 資料將會在這裡插入 -->
+    </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // 初始化：載入學生資料
+        loadStudents();
+
+        // 創建學生
+        $('#create-form').on('submit', function (e) {
+            e.preventDefault();
+            var newStudent = {
+                Name: $('#Name').val(),
+                Email: $('#Email').val(),
+                Course: $('#Course').val()
+            };
+            $.ajax({
+                url: '@Url.Action("CreateStudent", "Student")',
+                method: 'POST',
+                data: newStudent,
+                success: function (response) {
+                    alert('學生已新增');
+                    loadStudents();  // 重新載入資料
+                    $('#create-form')[0].reset();  // 重置表單
+                },
+                error: function () {
+                    alert('新增學生失敗');
+                }
+            });
+        });
+
+        // 刪除學生
+        $(document).on('click', '.delete-btn', function () {
+            var studentId = $(this).data('id');
+            $.ajax({
+                url: '@Url.Action("DeleteStudent", "Student")',
+                method: 'POST',
+                data: { id: studentId },
+                success: function (response) {
+                    alert('學生已刪除');
+                    loadStudents();  // 重新載入資料
+                },
+                error: function () {
+                    alert('刪除學生失敗');
+                }
+            });
+        });
+
+        // 重新載入學生資料
+        function loadStudents() {
+            $.ajax({
+                url: '@Url.Action("GetStudents", "Student")',
+                method: 'GET',
+                success: function (response) {
+                    console.log(response)
+                    var tableBody = $('#student-table tbody');
+                    tableBody.empty();  // 清空現有資料
+                    $.each(response, function (index, student) {
+                        var row = '<tr>' +
+                            '<td>' + student.Id + '</td>' +
+                            '<td><a href="javascript:void(0);" onclick="viewStudentDetails(' + student.Id + ')">' + student.Name + '</a></td>' +
+                            '<td>' + student.Email + '</td>' +
+                            '<td>' + student.Course + '</td>' +
+                            '<td><button class="btn btn-danger delete-btn" data-id="' + student.Id + '">刪除</button></td>' +
+                            '</tr>';
+                        tableBody.append(row);
+                    });
+                },
+                error: function () {
+                    alert('無法載入學生資料');
+                }
+            });
+        }
+    });
+
+    function viewStudentDetails(studentId) {
+    $.ajax({
+        url: '@Url.Action("GetStudent", "Student")',
+        method: 'GET',
+        data: { id: studentId },
+        success: function (response) {
+            console.log(response)
+            if (response) {
+                alert('學生詳細資訊：\n' +
+                      '姓名: ' + response.Name + '\n' +
+                      'Email: ' + response.Email + '\n' +
+                      '課程: ' + response.Course);
+            } else {
+                alert('找不到該學生');
+            }
+        },
+        error: function() {
+            alert('無法載入學生詳細資料');
+        }
+    });
+}
+</script>
